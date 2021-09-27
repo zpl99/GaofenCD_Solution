@@ -1,0 +1,3 @@
+sudo docker login --username=18621807519 registry.cn-hangzhou.aliyuncs.com
+sudo docker tag [700ac2691c19] registry.cn-hangzhou.aliyuncs.com/bnu/compete:[0.3] # [***]指其中的参数可根据需求灵活调整
+sudo docker push registry.cn-hangzhou.aliyuncs.com/bnu/compete:[0.3]
