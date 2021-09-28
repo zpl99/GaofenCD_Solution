@@ -1,0 +1,26 @@
+{
+  "data": {
+    "batchsize": 16,
+    "val_batchsize": 8
+  },
+  "schedule": {
+    "print_frequence": 20,
+    "save_frequence": 1,
+    "val_frequence": 1
+  },
+  "decoder": {
+    "ppm_in_dim": 768,
+    "each_out_dim": [
+      96,
+      192,
+      384,
+      768
+    ],
+    "reduction_dim": 96
+  },
+  "save_model_path": "/media/tang/lzp/xceptionDeepLabV3P_Whu",
+  "save_model_name": "xceptionDeepLabV3P_Whu",
+  "log_save_path": "xceptionDeepLabV3P_Whu",
+  "pre_train_seg": "/media/tang/lzp/save_file_whu_bce_1e-2/checkpoints/R2AttU_Net_lr1e-2epoch25.pth",
+  "pre_train_cd_model": "save_file/checkpoints/cd_epoch199.pth"
+}

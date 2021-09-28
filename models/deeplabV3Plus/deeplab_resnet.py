@@ -182,7 +182,7 @@ class ASPP_module(nn.Module):
 
 
 class DeepLabv3_plus(nn.Module):
-    def __init__(self, nInputChannels=3, n_classes=1, os=16, pretrained=False, _print=True):
+    def __init__(self, nInputChannels=3, n_classes=1, os=16, pretrained=True, _print=True):
         if _print:
             print("Constructing DeepLabv3+ model...")
             print("Number of classes: {}".format(n_classes))

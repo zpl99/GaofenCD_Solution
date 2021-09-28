@@ -161,7 +161,7 @@ class SeResNext50_Unet_Double(nn.Module):
         self.conv9_2 = ConvRelu(decoder_filters[-4] + encoder_filters[-5], decoder_filters[-4])
         self.conv10 = ConvRelu(decoder_filters[-4], decoder_filters[-5])
 
-        self.res = nn.Conv2d(decoder_filters[-5] * 2, 5, 1, stride=1, padding=0)
+        self.res = nn.Conv2d(decoder_filters[-5] * 2, 1, 1, stride=1, padding=0)
 
         self._initialize_weights()
 
@@ -337,7 +337,7 @@ class Dpn92_Unet_Double(nn.Module):
                                      SCSEModule(decoder_filters[-4], reduction=16, concat=True))
         self.conv10 = ConvRelu(decoder_filters[-4] * 2, decoder_filters[-5])
 
-        self.res = nn.Conv2d(decoder_filters[-5] * 2, 5, 1, stride=1, padding=0)
+        self.res = nn.Conv2d(decoder_filters[-5] * 2, 1, 1, stride=1, padding=0)
 
         self._initialize_weights()
 
@@ -504,7 +504,7 @@ class Res34_Unet_Double(nn.Module):
         self.conv9_2 = ConvRelu(decoder_filters[-4] + encoder_filters[-5], decoder_filters[-4])
         self.conv10 = ConvRelu(decoder_filters[-4], decoder_filters[-5])
 
-        self.res = nn.Conv2d(decoder_filters[-5] * 2, 5, 1, stride=1, padding=0)
+        self.res = nn.Conv2d(decoder_filters[-5] * 2, 1, 1, stride=1, padding=0)
 
         self._initialize_weights()
 
@@ -660,7 +660,7 @@ class SeNet154_Unet_Double(nn.Module):
         self.conv9_2 = ConvRelu(decoder_filters[-4] + encoder_filters[-5], decoder_filters[-4])
         self.conv10 = ConvRelu(decoder_filters[-4], decoder_filters[-5])
 
-        self.res = nn.Conv2d(decoder_filters[-5] * 2, 5, 1, stride=1, padding=0)
+        self.res = nn.Conv2d(decoder_filters[-5] * 2, 1, 1, stride=1, padding=0)
 
         self._initialize_weights()
 
