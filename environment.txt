@@ -1,9 +1,0 @@
-opencv-python==4.4.0.46 
-termcolor==1.1.0 
-yacs==0.1.8
-scipy
-tqdm
-timm==0.3.2
-mmcv
-imageio
-pillow
