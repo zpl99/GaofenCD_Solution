@@ -32,10 +32,11 @@ def split(path = r"C:\Users\dell\Desktop\Code\MyCDCode\Data (2)"):
             for j in range(2):
                 for i in range(2):
                     newpath = os.path.join(path,'new','{}{}_'.format(j,i)+filename + filetype)
-                    print(newpath)                                      #重新命名文件，命名格式：原路径+new+00、01、11、10+文件原名称
+                    # print(newpath)                                      #重新命名文件，命名格式：原路径+new+00、01、11、10+文件原名称
                     box = (weight * i, height * j, weight * (i + 1), height * (j + 1))
                     region = img.crop(box)                              #分割图片
                     region.save(newpath)                                #保存图片
 
 if __name__ == '__main__':
-    split()
+    split(r"E:\World_Dataset\china\images\train")
+    split(r"E:\World_Dataset\china\gt\train")

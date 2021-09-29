@@ -105,11 +105,11 @@ def train_seg(input_file, configs):
     # model = U_net.R2AttU_Net(3, 1).cuda()  # 用的R2AttU_Net，比较新的U-net
     model = deeplab_xception.DeepLabv3_plus(pretrained=True).cuda()  # pretrained->Backbone 是否预训练
     # initialize.init_weights(model)  # 网络权重初始化，默认为normal
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.000001, last_epoch=-1)
     # model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
     # optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    max_epochs = 40
+    max_epochs = 100
     writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))  # TODO:根据需求修改
     saver = getBestCheckPoints.CheckPointsSaver(configs["save_model_name"])
     for epoch in range(max_epochs):

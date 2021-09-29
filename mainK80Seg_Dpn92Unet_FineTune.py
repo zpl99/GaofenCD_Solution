@@ -222,24 +222,18 @@ class CDImgDataset(Dataset):
 
 
 def train_seg(input_file, configs):
-    train_set = WHUDataset.FenCengImgDataset(input_file, train_transform, label_norm=1)
-    val_set = WHUDataset.NormalImgDataset(input_file, val_transform, mode="test")
+    train_set = GaofenDataset.FenCengImgDataset(input_file, train_transform, label_norm=1)
+    val_set = GaofenDataset.NormalImgDataset(input_file, val_transform, mode="test")
     train_loader = DataLoader(train_set, batch_size=configs["data"]["batchsize"], num_workers=32, shuffle=True)
-    # train_loader = DataLoader(train_set, batch_size=1, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=configs["data"]["val_batchsize"], num_workers=16, shuffle=True)
     loss = nn.BCEWithLogitsLoss()
-    # loss = focalLoss.FocalLoss(alpha=0.75, gamma=1, logits=True, reduce=True)  # focal loss
-    # loss = diceloss.DiceLoss() # dice loss
-    # model = Encoder_Decoder(configs).cuda() # 这个是swin-transformer
-    # model = U_net.R2AttU_Net(3, 1).cuda()  # 用的R2AttU_Net，比较新的U-net
-    model = xModel.SeNet154_Unet_Loc().cuda()
-    # initialize.init_weights(model)  # 网络权重初始化，默认为normal
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.000001, last_epoch=-1) # TODO:实验发现这个学习率调整策略不佳（train loss随着学习率的变化而变化）
-    # model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    max_epochs = 40
-    writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))
+    model = xModel.Dpn92_Unet_Loc(pretrained=False).cuda()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00015)
+    model, optimizer = load_checkpoint(model, configs["pre_train_seg"], optimizer)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00015)
+    lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.000001, last_epoch=-1)
+    max_epochs = 100
+    writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))  # TODO:根据需求修改
     saver = getBestCheckPoints.CheckPointsSaver(configs["save_model_name"])
     for epoch in range(max_epochs):
         epoch_loss = 0.0
@@ -247,7 +241,6 @@ def train_seg(input_file, configs):
         train_loss = 0.0
         model.train()
         for i, data in enumerate(train_loader):
-            # print(data["image"][:,1,:,:].mean(),data["image"][:,1,:,:].std())
             optimizer.zero_grad()
             train_pred = model(data["image"].cuda())
             batch_loss = loss(train_pred, data["label"].float().cuda())
@@ -265,7 +258,7 @@ def train_seg(input_file, configs):
                 batch_start_time = time.time()
         writer.add_scalar("seg epoch train loss", (epoch_loss * configs["data"]["batchsize"]) / len(train_loader),
                           global_step=epoch)
-        lr_schedule.step()  # 更新学习率
+        lr_schedule.step() # 更新学习率
         lr_new = lr_schedule.get_lr()
         # 验证过程
         if (epoch + 1) % configs["schedule"]["val_frequence"] == 0:
@@ -279,7 +272,7 @@ def train_seg(input_file, configs):
                     batch_loss += loss(val_pred, data["resize_label"].float().cuda())
                     val_pred = torch.sigmoid(val_pred)
                     val_pred = val_pred.cpu().numpy()
-                    om = np.where(val_pred > 0.3, 1, 0)
+                    om = np.where(val_pred > 0.5, 1, 0)
                     pre_label = om
                     truth = data["resize_label"]
                     p_class_batch, r_class_batch, f_class_batch = metrics.getPrecision_Recall_F1(truth.flatten(),
@@ -289,6 +282,7 @@ def train_seg(input_file, configs):
                     p_class += p_class_batch[-1]  # -1指索引第二类评分，即建筑物类别评分
                     r_class += r_class_batch[-1]
                     f_class += f_class_batch[-1]
+            # 输出验证结果并写入writer
             print("val loss : %f | average precision : %f | average recall %f | average f1 : %f | learning rate : %f" % (
                 (batch_loss / data_len) * configs["data"]["val_batchsize"], p_class / data_len, r_class / data_len,
                 f_class / data_len, lr_new[0]))
@@ -299,7 +293,6 @@ def train_seg(input_file, configs):
             writer.add_scalar("seg epoch val f1", f_class / data_len, global_step=epoch)
             writer.add_scalar("seg epoch learning rate", lr_new[0], global_step=epoch)
             # save
-
             saver.push(epoch, model, optimizer, configs, float(((batch_loss / data_len) * configs["data"]["val_batchsize"]).cpu()))
     writer.close()  # 存储log
 
@@ -341,7 +334,7 @@ def try_seg(input_file, configs):
 if __name__ == '__main__':
     input_file = sys.argv[1]
 
-    configs = "configs/lzp_configs_seg_SeNet154Unet"
+    configs = "configs/lzp_configs_seg_Dpn92Unet_FineTune"
     # configs = Config.fromfile(configs) 
     configs = loadConfigs.readConfigs(configs)
     # try_seg(input_file, configs)

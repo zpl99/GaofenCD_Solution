@@ -4,6 +4,11 @@ import sys
 
 
 class CheckPointsSaver():
+    """
+    用来存储模型的类
+    目前并没有early stopping
+    只有选取最优模型存储，删除掉较差模型的功能
+    """
     def __init__(self, module):
         self.logs = {}
         self.thisValLog = sys.maxsize

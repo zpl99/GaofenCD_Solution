@@ -222,34 +222,33 @@ class CDImgDataset(Dataset):
 
 
 def train_seg(input_file, configs):
-    train_set = WHUDataset.FenCengImgDataset(input_file, train_transform, label_norm=1)
-    val_set = WHUDataset.NormalImgDataset(input_file, val_transform, mode="test")
+    train_set = GaofenDataset.FenCengImgDataset(input_file, train_transform, label_norm=1)
+    val_set = GaofenDataset.NormalImgDataset(input_file, val_transform, mode="test")
     train_loader = DataLoader(train_set, batch_size=configs["data"]["batchsize"], num_workers=32, shuffle=True)
     # train_loader = DataLoader(train_set, batch_size=1, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=configs["data"]["val_batchsize"], num_workers=16, shuffle=True)
     loss = nn.BCEWithLogitsLoss()
-    # loss = focalLoss.FocalLoss(alpha=0.75, gamma=1, logits=True, reduce=True)  # focal loss
-    # loss = diceloss.DiceLoss() # dice loss
-    # model = Encoder_Decoder(configs).cuda() # 这个是swin-transformer
-    # model = U_net.R2AttU_Net(3, 1).cuda()  # 用的R2AttU_Net，比较新的U-net
-    model = xModel.SeNet154_Unet_Loc().cuda()
-    # initialize.init_weights(model)  # 网络权重初始化，默认为normal
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.000001, last_epoch=-1) # TODO:实验发现这个学习率调整策略不佳（train loss随着学习率的变化而变化）
-    # model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    max_epochs = 40
-    writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))
+    model = xModel.Res34_Unet_Loc(pretrained=False).cuda()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00015)
+    model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00015)
+    lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.000001, last_epoch=-1)
+    max_epochs = 100
+    writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))  # TODO:根据需求修改
     saver = getBestCheckPoints.CheckPointsSaver(configs["save_model_name"])
     for epoch in range(max_epochs):
         epoch_loss = 0.0
         batch_start_time = time.time()
         train_loss = 0.0
         model.train()
+        # unloader = transforms.ToPILImage()
+        # if (epoch + 1) % configs["schedule"]["save_frequence"] == 0:
+        # save_checkpoint(epoch, model, optimizer, configs, module=configs["save_model_name"])# TODO: 根据需求修改
         for i, data in enumerate(train_loader):
             # print(data["image"][:,1,:,:].mean(),data["image"][:,1,:,:].std())
             optimizer.zero_grad()
             train_pred = model(data["image"].cuda())
+
             batch_loss = loss(train_pred, data["label"].float().cuda())
             batch_loss.backward()
             optimizer.step()
@@ -299,7 +298,6 @@ def train_seg(input_file, configs):
             writer.add_scalar("seg epoch val f1", f_class / data_len, global_step=epoch)
             writer.add_scalar("seg epoch learning rate", lr_new[0], global_step=epoch)
             # save
-
             saver.push(epoch, model, optimizer, configs, float(((batch_loss / data_len) * configs["data"]["val_batchsize"]).cpu()))
     writer.close()  # 存储log
 
@@ -341,7 +339,7 @@ def try_seg(input_file, configs):
 if __name__ == '__main__':
     input_file = sys.argv[1]
 
-    configs = "configs/lzp_configs_seg_SeNet154Unet"
+    configs = "configs/lzp_configs_seg_res34Unet_FineTune"
     # configs = Config.fromfile(configs) 
     configs = loadConfigs.readConfigs(configs)
     # try_seg(input_file, configs)

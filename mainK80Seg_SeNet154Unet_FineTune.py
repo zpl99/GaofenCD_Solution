@@ -222,34 +222,43 @@ class CDImgDataset(Dataset):
 
 
 def train_seg(input_file, configs):
-    train_set = WHUDataset.FenCengImgDataset(input_file, train_transform, label_norm=1)
-    val_set = WHUDataset.NormalImgDataset(input_file, val_transform, mode="test")
+    train_set = GaofenDataset.FenCengImgDataset(input_file, train_transform, label_norm=1)
+    val_set = GaofenDataset.NormalImgDataset(input_file, val_transform, mode="test")
     train_loader = DataLoader(train_set, batch_size=configs["data"]["batchsize"], num_workers=32, shuffle=True)
-    # train_loader = DataLoader(train_set, batch_size=1, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=configs["data"]["val_batchsize"], num_workers=16, shuffle=True)
     loss = nn.BCEWithLogitsLoss()
-    # loss = focalLoss.FocalLoss(alpha=0.75, gamma=1, logits=True, reduce=True)  # focal loss
-    # loss = diceloss.DiceLoss() # dice loss
-    # model = Encoder_Decoder(configs).cuda() # 这个是swin-transformer
-    # model = U_net.R2AttU_Net(3, 1).cuda()  # 用的R2AttU_Net，比较新的U-net
-    model = xModel.SeNet154_Unet_Loc().cuda()
-    # initialize.init_weights(model)  # 网络权重初始化，默认为normal
+    model = xModel.SeNet154_Unet_Loc(pretrained=None).cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.000001, last_epoch=-1) # TODO:实验发现这个学习率调整策略不佳（train loss随着学习率的变化而变化）
-    # model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    max_epochs = 40
-    writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))
+    model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    lr_schedule = torch.optim.lr_scheduler.ExponentialLR(optimizer,gamma=0.8)
+    max_epochs = 100
+    writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))  # TODO:根据需求修改
     saver = getBestCheckPoints.CheckPointsSaver(configs["save_model_name"])
     for epoch in range(max_epochs):
         epoch_loss = 0.0
         batch_start_time = time.time()
         train_loss = 0.0
         model.train()
+        # unloader = transforms.ToPILImage()
+        # if (epoch + 1) % configs["schedule"]["save_frequence"] == 0:
+        # save_checkpoint(epoch, model, optimizer, configs, module=configs["save_model_name"])# TODO: 根据需求修改
         for i, data in enumerate(train_loader):
             # print(data["image"][:,1,:,:].mean(),data["image"][:,1,:,:].std())
             optimizer.zero_grad()
             train_pred = model(data["image"].cuda())
+            # 这部分是dice loss的设置， dice loss标签需要做一些变换
+            # dice loss 标签和预测结果shape一样
+            # ____start_____
+            # true_label = torch.squeeze(data["label"].long().cpu())
+            # true_label = utils.get_one_hot(true_label,2)
+            # true_label = true_label.permute(0,3,1,2)
+            # batch_loss = loss(train_pred, true_label.cuda())
+            # ______end______
+
+            # train_pred : [b,1,h,w]
+            # label : [b,1,h,w]
+            # batch_loss = loss(train_pred, torch.squeeze(data["label"].long().cuda(), dim=1))
             batch_loss = loss(train_pred, data["label"].float().cuda())
             batch_loss.backward()
             optimizer.step()
@@ -277,6 +286,9 @@ def train_seg(input_file, configs):
                 for i, data in enumerate(val_loader):
                     val_pred = model(data["image"].cuda())  # 【b，1，h，w】
                     batch_loss += loss(val_pred, data["resize_label"].float().cuda())
+                    # om = torch.argmax(val_pred.squeeze(), dim=1).detach().cpu().numpy()
+                    # val_pred = TF.resize(val_pred, 512)  # 将预测结果resize到512
+
                     val_pred = torch.sigmoid(val_pred)
                     val_pred = val_pred.cpu().numpy()
                     om = np.where(val_pred > 0.3, 1, 0)
@@ -341,7 +353,7 @@ def try_seg(input_file, configs):
 if __name__ == '__main__':
     input_file = sys.argv[1]
 
-    configs = "configs/lzp_configs_seg_SeNet154Unet"
+    configs = "configs/lzp_configs_seg_SeNet154Unet_FineTune"
     # configs = Config.fromfile(configs) 
     configs = loadConfigs.readConfigs(configs)
     # try_seg(input_file, configs)
