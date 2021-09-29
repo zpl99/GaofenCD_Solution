@@ -1,0 +1,24 @@
+{
+  "data": {
+    "batchsize": 16,
+    "val_batchsize": 8
+  },
+  "schedule": {
+    "print_frequence": 20,
+    "save_frequence": 5,
+    "val_frequence": 1
+  },
+  "decoder": {
+    "ppm_in_dim": 768,
+    "each_out_dim": [
+      96,
+      192,
+      384,
+      768
+    ],
+    "reduction_dim": 96
+  },
+  "save": "save/swin_transformer",
+  "pre_train_swin_transformer_model": "/home/tang/桌面/liu/MyCDCode2/MyCDCode/save_file_whu/checkpoints/R2AttU_Netepoch9.pth",
+  "pre_train_cd_model": "/home/tang/桌面/liu/MyCDCode2/MyCDCode/save_file_0_5cd/checkpoints/cd_0_5epoch49.pth"
+}
