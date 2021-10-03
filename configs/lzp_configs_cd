@@ -1,6 +1,6 @@
 {
   "data": {
-    "batchsize": 8,
+    "batchsize": 16,
     "val_batchsize": 8
   },
   "schedule": {
@@ -18,9 +18,9 @@
     ],
     "reduction_dim": 96
   },
-  "save_model_path": "NeedToEdit",
-  "save_model_name": "NeedToEdit",
-  "log_save_path": "NeedToEdit",
+  "save_model_path": "/media/tang/lzp/Res50_Double_CD_FineTune",
+  "save_model_name": "Res50_Double_CD_FineTune",
+  "log_save_path": "Res50_Double_CD_FineTune",
   "pre_train_seg": "/media/tang/lzp/save_file_whu_bce_1e-2/checkpoints/R2AttU_Net_lr1e-2epoch25.pth",
-  "pre_train_cd_model": "save_file/checkpoints/cd_epoch199.pth"
+  "pre_train_cd_model": "/media/tang/lzp/v05models/Res50_Double_CD/checkpoints/Res50_Double_CDepoch124.pth"
 }

@@ -226,12 +226,15 @@ def train_cd(input_file, configs):
     val_loader = DataLoader(val_set, batch_size=configs["data"]["val_batchsize"], num_workers=16, shuffle=True)
     loss = nn.BCEWithLogitsLoss()
     model = ResNet(3, 1).cuda()
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    # model, optimizer , start_epoch = load_checkpoint(model,configs["pre_train_cd_model"],optimizer) 
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    model, optimizer, start_epoch = load_checkpoint(model,configs["pre_train_cd_model"],optimizer)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)  # version1 : lr0.001
+
+    lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 200, eta_min=0.0000001, last_epoch=-1)
     max_epochs = 200
     writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))  # TODO:根据需求修改
     saver = getBestCheckPoints.CheckPointsSaver(configs["save_model_name"])
+
     for epoch in range(max_epochs):
         batch_start_time = time.time()
         train_loss = 0.0
@@ -258,6 +261,8 @@ def train_cd(input_file, configs):
                 batch_start_time = time.time()
         writer.add_scalar("cd epoch train loss", (epoch_loss * configs["data"]["batchsize"]) / len(train_loader),
                           global_step=epoch)
+        lr_schedule.step()  # 更新学习率
+        lr_new = lr_schedule.get_lr()
         if (epoch + 1) % configs["schedule"]["val_frequence"] == 0:
             model.eval()
             batch_loss = 0
@@ -281,9 +286,10 @@ def train_cd(input_file, configs):
                     p_class += p_class_batch[-1]
                     r_class += r_class_batch[-1]
                     f_class += f_class_batch[-1]
-            print("val loss : %f | average precision : %f | average recall %f | average f1 : %f" % (
-                (batch_loss / data_len) * configs["data"]["val_batchsize"], p_class / data_len, r_class / data_len,
-                f_class / data_len))
+            print(
+                "val loss : %f | average precision : %f | average recall %f | average f1 : %f | learning rate : %f" % (
+                    (batch_loss / data_len) * configs["data"]["val_batchsize"], p_class / data_len, r_class / data_len,
+                    f_class / data_len, lr_new[0]))
             writer.add_scalar("cd epoch val loss", (batch_loss / data_len) * configs["data"]["val_batchsize"],
                               global_step=epoch)
             writer.add_scalar("cd epoch val precision", p_class / data_len, global_step=epoch)
@@ -291,6 +297,7 @@ def train_cd(input_file, configs):
             writer.add_scalar("cd epoch val f1", f_class / data_len, global_step=epoch)
             saver.push(epoch, model, optimizer, configs,
                        float(((batch_loss / data_len) * configs["data"]["val_batchsize"]).cpu()))
+            writer.add_scalar("seg epoch learning rate", lr_new[0], global_step=epoch)
     writer.close()
 
 

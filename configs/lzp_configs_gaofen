@@ -21,6 +21,6 @@
   "save_model_path": "NeedToEdit",
   "save_model_name": "NeedToEdit",
   "log_save_path": "NeedToEdit",
-  "pre_train_seg_model": "pretrainedModels/seg/GaofenR2AttU_Net_lr1e-2_Using_WHU_pretrainedepoch11.pth",
-  "pre_train_cd_model": "pretrainedModels/cd/cd_gaofen_using0_5PretrainedResnet50Doubleepoch139.pth"
+  "pre_train_seg_model": "/media/tang/lzp/Dpn92Unet_Whu_FineTune/checkpoints/Dpn92Unet_Whu_FineTuneepoch99.pth",
+  "pre_train_cd_model": "/media/tang/lzp/Res50_Double_CD_FineTune/checkpoints/Res50_Double_CD_FineTuneepoch6.pth"
 }

@@ -97,19 +97,13 @@ def train_seg(input_file, configs):
     train_set = GaofenDataset.FenCengImgDataset(input_file, train_transform, label_norm=1)
     val_set = GaofenDataset.NormalImgDataset(input_file, val_transform, mode="test")
     train_loader = DataLoader(train_set, batch_size=configs["data"]["batchsize"], num_workers=32, shuffle=True)
-    # train_loader = DataLoader(train_set, batch_size=1, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=configs["data"]["val_batchsize"], num_workers=16, shuffle=True)
     loss = nn.BCEWithLogitsLoss()
-    # loss = focalLoss.FocalLoss(alpha=0.75, gamma=1, logits=True, reduce=True)  # focal loss
-    # loss = diceloss.DiceLoss() # dice loss
-    # model = Encoder_Decoder(configs).cuda() # 这个是swin-transformer
-    # model = U_net.R2AttU_Net(3, 1).cuda()  # 用的R2AttU_Net，比较新的U-net
-    model = deeplab_resnet.DeepLabv3_plus(pretrained=True).cuda() # pretrained->Backbone 是否预训练
-    # initialize.init_weights(model)  # 网络权重初始化，默认为normal
+    model = deeplab_resnet.DeepLabv3_plus(pretrained=False).cuda() # pretrained->Backbone 是否预训练
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    model, optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.000001, last_epoch=-1)
-    # model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     max_epochs = 100
     writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))  # TODO:根据需求修改
     saver = getBestCheckPoints.CheckPointsSaver(configs["save_model_name"])
@@ -230,7 +224,7 @@ def try_seg(input_file, configs):
 if __name__ == '__main__':
     input_file = sys.argv[1]
 
-    configs = "configs/lzp_configs_seg_res101DeepLabV3P"
+    configs = "configs/lzp_configs_seg_res101DeepLabV3P_FineTune"
     # configs = Config.fromfile(configs) 
     configs = loadConfigs.readConfigs(configs)
     # try_seg(input_file, configs)

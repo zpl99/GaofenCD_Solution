@@ -337,7 +337,9 @@ class Dpn92_Unet_Double(nn.Module):
                                      SCSEModule(decoder_filters[-4], reduction=16, concat=True))
         self.conv10 = ConvRelu(decoder_filters[-4] * 2, decoder_filters[-5])
 
-        self.res = nn.Conv2d(decoder_filters[-5] * 2, 1, 1, stride=1, padding=0)
+        self.res = nn.Conv2d(decoder_filters[-5], 1, 1, stride=1, padding=0)
+
+        self.res2 = nn.Conv2d(decoder_filters[-5] * 2 + 2, 1, 1, stride=1, padding=0)
 
         self._initialize_weights()
 
@@ -393,14 +395,16 @@ class Dpn92_Unet_Double(nn.Module):
 
         return dec10
 
-    def forward(self, x):
+    def forward(self, x1, x2):
 
-        dec10_0 = self.forward1(x[:, :3, :, :])
-        dec10_1 = self.forward1(x[:, 3:, :, :])
+        dec10_0 = self.forward1(x1)
+        dec10_1 = self.forward1(x2)
+        mask_0 = torch.sigmoid(self.res(dec10_0))
+        mask_1 = torch.sigmoid(self.res(dec10_1))
 
-        dec10 = torch.cat([dec10_0, dec10_1], 1)
+        dec10 = torch.cat([dec10_0, dec10_1, mask_0, mask_1], 1)
 
-        return self.res(dec10)
+        return self.res2(dec10)
 
     def _initialize_weights(self):
         for m in self.modules():
@@ -550,9 +554,9 @@ class Res34_Unet_Double(nn.Module):
 
         return dec10
 
-    def forward(self, x):
-        dec10_0 = self.forward1(x[:, :3, :, :])
-        dec10_1 = self.forward1(x[:, 3:, :, :])
+    def forward(self, x1, x2):
+        dec10_0 = self.forward1(x1)
+        dec10_1 = self.forward1(x2)
         dec10 = torch.cat([dec10_0, dec10_1], 1)
         return self.res(dec10)
 
@@ -708,10 +712,10 @@ class SeNet154_Unet_Double(nn.Module):
 
         return dec10
 
-    def forward(self, x):
+    def forward(self, x1, x2):
 
-        dec10_0 = self.forward1(x[:, :3, :, :])
-        dec10_1 = self.forward1(x[:, 3:, :, :])
+        dec10_0 = self.forward1(x1)
+        dec10_1 = self.forward1(x2)
 
         dec10 = torch.cat([dec10_0, dec10_1], 1)
 

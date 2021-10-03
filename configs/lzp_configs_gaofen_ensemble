@@ -1,0 +1,9 @@
+{
+  "pre_train_seg_model1": "pretrainedModels/Dpn92Unet_Whu_FineTuneepoch99.pth",
+  "pre_train_seg_model2": "pretrainedModels/SeResNext50Unet_FineTuneepoch47.pth",
+  "pre_train_seg_model3": "pretrainedModels/res34Unet_FineTuneepoch21.pth",
+  "pre_train_seg_model4": "pretrainedModels/SeNet154Unet_FineTuneepoch84.pth",
+  "pre_train_seg_model5": "pretrainedModels/xceptionDeepLabV3P_FineTuneepoch99.pth",
+  "pre_train_seg_model6": "pretrainedModels/res101DeepLabV3P_FineTuneepoch4.pth",
+  "pre_train_cd_model": "pretrainedModels/Res50_Double_CD_FineTuneepoch6.pth"
+}

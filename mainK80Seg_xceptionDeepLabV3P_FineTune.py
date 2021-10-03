@@ -92,7 +92,6 @@ def load_checkpoint(model, checkpoint_PATH, optimizer):
     return model, optimizer
 
 
-
 def train_seg(input_file, configs):
     train_set = GaofenDataset.FenCengImgDataset(input_file, train_transform, label_norm=1)
     val_set = GaofenDataset.NormalImgDataset(input_file, val_transform, mode="test")
@@ -104,12 +103,12 @@ def train_seg(input_file, configs):
     # loss = diceloss.DiceLoss() # dice loss
     # model = Encoder_Decoder(configs).cuda() # 这个是swin-transformer
     # model = U_net.R2AttU_Net(3, 1).cuda()  # 用的R2AttU_Net，比较新的U-net
-    model = deeplab_resnet.DeepLabv3_plus(pretrained=True).cuda() # pretrained->Backbone 是否预训练
+    model = deeplab_xception.DeepLabv3_plus(pretrained=False).cuda()  # pretrained->Backbone 是否预训练
     # initialize.init_weights(model)  # 网络权重初始化，默认为normal
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.000001, last_epoch=-1)
-    # model,optimizer = load_checkpoint(model,configs["pre_train_seg"],optimizer)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     max_epochs = 100
     writer = SummaryWriter(os.path.join("log_files", configs["log_save_path"]))  # TODO:根据需求修改
     saver = getBestCheckPoints.CheckPointsSaver(configs["save_model_name"])
@@ -145,7 +144,7 @@ def train_seg(input_file, configs):
             # 输出训练情况
             if i % configs["schedule"]["print_frequence"] == 0:
                 print('[%03d/%03d] [%03d/%03d] %2.2f sec(s)  Loss: %3.6f ' % (
-                    epoch+1, max_epochs, i, len(train_set) // configs["data"]["batchsize"],
+                    epoch + 1, max_epochs, i, len(train_set) // configs["data"]["batchsize"],
                     time.time() - batch_start_time,
                     train_loss / configs["schedule"]["print_frequence"]))
                 train_loss = 0.0
@@ -179,9 +178,10 @@ def train_seg(input_file, configs):
                     p_class += p_class_batch[-1]  # -1指索引第二类评分，即建筑物类别评分
                     r_class += r_class_batch[-1]
                     f_class += f_class_batch[-1]
-            print("val loss : %f | average precision : %f | average recall %f | average f1 : %f | learning rate : %f" % (
-                (batch_loss / data_len) * configs["data"]["val_batchsize"], p_class / data_len, r_class / data_len,
-                f_class / data_len, lr_new[0]))
+            print(
+                "val loss : %f | average precision : %f | average recall %f | average f1 : %f | learning rate : %f" % (
+                    (batch_loss / data_len) * configs["data"]["val_batchsize"], p_class / data_len, r_class / data_len,
+                    f_class / data_len, lr_new[0]))
             writer.add_scalar("seg epoch val loss", (batch_loss / data_len) * configs["data"]["val_batchsize"],
                               global_step=epoch)
             writer.add_scalar("seg epoch val precision", p_class / data_len, global_step=epoch)
@@ -189,7 +189,8 @@ def train_seg(input_file, configs):
             writer.add_scalar("seg epoch val f1", f_class / data_len, global_step=epoch)
             writer.add_scalar("seg epoch learning rate", lr_new[0], global_step=epoch)
             # save
-            saver.push(epoch, model, optimizer, configs, float(((batch_loss / data_len) * configs["data"]["val_batchsize"]).cpu()))
+            saver.push(epoch, model, optimizer, configs,
+                       float(((batch_loss / data_len) * configs["data"]["val_batchsize"]).cpu()))
     writer.close()  # 存储log
 
 
@@ -230,7 +231,7 @@ def try_seg(input_file, configs):
 if __name__ == '__main__':
     input_file = sys.argv[1]
 
-    configs = "configs/lzp_configs_seg_res101DeepLabV3P"
+    configs = "configs/lzp_configs_seg_xceptionDeepLabV3P_FineTune"
     # configs = Config.fromfile(configs) 
     configs = loadConfigs.readConfigs(configs)
     # try_seg(input_file, configs)

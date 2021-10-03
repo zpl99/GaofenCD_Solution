@@ -20,6 +20,9 @@ from models import U_net
 from dataset import WHUDataset,GaofenDataset,CDdataset0_5
 from PIL import Image
 from evaluation import metrics
+from models.xview_first_model import models as xModel
+from models.deeplabV3Plus import deeplab_resnet, deeplab_xception
+
 # encoding=utf8
 """
 高分比赛代码1.0
@@ -167,7 +170,7 @@ def test_cd(input_file, output_file, configs):
             val_pred = torch.sigmoid(val_pred)
             val_pred = val_pred.detach().cpu().numpy() # tensor to numpy
             pre_mask_rgb = cv2.resize(val_pred[0][0], (512, 512)) # 224 to 512
-            pre_mask_rgb = np.where(pre_mask_rgb>0.1, 1, 0) # 阈值设定为0.3
+            pre_mask_rgb = np.where(pre_mask_rgb>0.25, 1, 0) # 阈值设定为0.3
             true_label = data["label"]
             pre_label = pre_mask_rgb
             truth = data["label"]
@@ -185,7 +188,7 @@ def test_seg(input_file, output_file, configs):
         os.makedirs(output_file)
         print(output_file + "dir maked")
     # model = Encoder_Decoder(configs).cuda()
-    model = U_net.R2AttU_Net(3,1).cuda()
+    model = xModel.Dpn92_Unet_Loc(pretrained=None).cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     model, optimizer = load_checkpoint(model, configs["pre_train_seg_model"], optimizer)
     model = model.cuda()
@@ -201,7 +204,7 @@ def test_seg(input_file, output_file, configs):
             val_pred = torch.sigmoid(val_pred)
             val_pred = val_pred.detach().cpu().numpy()
             pre_mask_rgb = cv2.resize(val_pred[0][0], (512, 512))
-            pre_mask_rgb = np.where(pre_mask_rgb>0.10, 1, 0) # 0.15
+            pre_mask_rgb = np.where(pre_mask_rgb>0.15, 0) # 0.15
             pre_label = pre_mask_rgb
             truth = data["label"]
             p_class_batch, r_class_batch, f_class_batch = metrics.getPrecision_Recall_F1(truth.flatten(),pre_label.flatten(),np.unique(truth.flatten()))
@@ -229,4 +232,4 @@ if __name__ == '__main__':
     configs = loadConfigs.readConfigs(configs)
     # configs = Config.fromfile(configs)
     # test_cd(input_file,output_file,configs)
-    test_seg(input_file,output_file,configs)
+    test_cd(input_file,output_file,configs)
